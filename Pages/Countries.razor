@@ -1,0 +1,205 @@
+﻿@page "/countries"
+@attribute [Authorize]
+@using GloboClima.Server.Services
+@using GloboClima.Server.Models.Requests.Auth
+@using GloboClima.Server.Models
+@inject ApiService ApiService
+
+<div class="countries-container">
+    <h3 class="countries-title">Consulta de Países</h3>
+
+    <EditForm Model="@searchModel" OnValidSubmit="@SearchCountry" class="countries-form">
+        <div class="form-group">
+            <InputText @bind-Value="searchModel.Name" class="form-input"
+                       placeholder="Digite o nome do país" />
+            <button type="submit" class="submit-button">Buscar</button>
+        </div>
+    </EditForm>
+
+    @if (isLoading)
+    {
+        <div class="loading-indicator">
+            <p>Carregando...</p>
+            <div class="spinner"></div>
+        </div>
+    }
+    else if (errorMessage != null)
+    {
+        <div class="error-message">@errorMessage</div>
+    }
+    else if (countries != null)
+    {
+        <div class="countries-grid">
+            @foreach (var country in countries)
+            {
+                <div class="country-card">                    
+                    <div class="country-info">
+                        <h4>@country.Name?.Common</h4>
+                        <p><strong>População:</strong> @country.Population.ToString("N0")</p>
+                        <p><strong>Idiomas:</strong> @(country.Languages != null ? string.Join(", ", country.Languages.Values) : "N/A")</p>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .countries-container {
+        max-width: 1000px;
+        margin: 2rem auto;
+        padding: 1.5rem;
+    }
+
+    .countries-title {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: #333;
+    }
+
+    .countries-form {
+        margin-bottom: 2rem;
+    }
+
+    .form-group {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-input {
+        flex: 1;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 1rem;
+    }
+
+    .submit-button {
+        padding: 0.75rem 1.5rem;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .submit-button:hover {
+            background-color: #218838;
+        }
+
+    .loading-indicator {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        padding: 2rem;
+        color: #6c757d;
+    }
+
+    .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top: 4px solid #28a745;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .error-message {
+        padding: 1rem;
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+    }
+
+    .countries-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .country-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+        transition: transform 0.2s;
+    }
+
+        .country-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+    .country-info {
+        padding: 1.5rem;
+    }
+
+        .country-info h4 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+
+        .country-info p {
+            margin: 0.5rem 0;
+            font-size: 0.95rem;
+        }
+
+        .country-info strong {
+            color: #495057;
+        }
+</style>
+
+@code {
+    private List<CountryRequest>? countries;
+    private string? errorMessage;
+    private bool isLoading;
+
+    private SearchModel searchModel = new();
+
+    private async Task SearchCountry()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            countries = await ApiService.GetCountryAsync(searchModel.Name);
+            if (countries?.Count == 0)
+                errorMessage = "Nenhum país encontrado";
+        }
+        catch (ApplicationException appEx)
+        {
+            errorMessage = appEx.Message;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Erro na consulta. Verifique o nome e tente novamente.";
+            Console.WriteLine(ex.ToString());
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private class SearchModel
+    {
+        public string Name { get; set; } = "";
+    }
+}

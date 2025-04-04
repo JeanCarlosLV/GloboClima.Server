@@ -1,0 +1,102 @@
+﻿@page "/weather"
+@using GloboClima.Server.Models.Requests
+@using GloboClima.Server.Services
+
+@inject ApiService ApiService
+
+<div class="weather-container">
+    <h3 class="weather-title">Consulta de Clima</h3>
+
+    <EditForm Model="@searchModel" OnValidSubmit="@SearchWeather" class="weather-form">
+        <div class="form-group">
+            <InputText class="form-input" @bind-Value="searchModel.City" placeholder="Digite a cidade" />
+            <button type="submit" class="submit-button">Buscar</button>
+        </div>
+    </EditForm>
+
+    @if (weather != null)
+    {
+        <div class="weather-card">
+            <h4>@weather.CityName</h4>
+            <p><strong>Temperatura:</strong> @weather.Main?.Temperature °C</p>
+            <p><strong>Umidade:</strong> @weather.Main?.Humidity%</p>
+            <p><strong>Condição:</strong> @weather.Weather?.FirstOrDefault()?.Description</p>
+        </div>
+    }
+</div>
+
+<style>
+    .weather-container {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 1.5rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .weather-title {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: #333;
+    }
+
+    .weather-form {
+        margin-bottom: 2rem;
+    }
+
+    .form-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .form-input {
+        flex: 1;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+
+    .submit-button {
+        padding: 0.5rem 1rem;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .submit-button:hover {
+            background-color: #0056b3;
+        }
+
+    .weather-card {
+        padding: 1.5rem;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+        .weather-card h4 {
+            margin-top: 0;
+            color: #007bff;
+        }
+
+        .weather-card p {
+            margin: 0.75rem 0;
+        }
+</style>
+
+@code {
+    private WeatherRequest? weather;
+    private SearchModel searchModel = new();
+
+    private async Task SearchWeather()
+    {
+        weather = await ApiService.GetWeatherAsync(searchModel.City);
+    }
+
+    private class SearchModel { public string City { get; set; } = ""; }
+}

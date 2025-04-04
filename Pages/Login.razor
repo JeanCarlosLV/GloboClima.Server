@@ -1,0 +1,83 @@
+﻿@page "/login"
+@using GloboClima.Server.Models.Requests
+@using GloboClima.Server.Services
+
+@inject NavigationManager Navigation
+@inject AuthService AuthService
+@inject IJSRuntime JSRuntime
+
+<div class="login-container">
+    <div class="login-card">
+        <h3 class="text-center mb-4">Login</h3>
+
+        @if (errorMessage != null)
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <EditForm Model="@loginModel" OnValidSubmit="@HandleLogin">
+            <div class="form-group mb-3">
+                <label for="email">Email</label>
+                <InputText id="email" @bind-Value="loginModel.Email"
+                           class="form-control" placeholder="Seu email" />
+                <ValidationMessage For="@(() => loginModel.Email)" />
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="password">Senha</label>
+                <InputText id="password" @bind-Value="loginModel.Password"
+                           type="password" class="form-control" placeholder="Sua senha" />
+                <ValidationMessage For="@(() => loginModel.Password)" />
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                    <span> Carregando...</span>
+                }
+                else
+                {
+                    <span>Entrar</span>
+                }
+            </button>
+        </EditForm>
+
+        <div class="text-center mt-3">
+            <a href="/register" class="text-muted">Não tem conta? Registre-se</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginRequest loginModel = new();
+    private string? errorMessage;
+    private bool isLoading = false;
+
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var success = await AuthService.LoginAsync(loginModel.Email, loginModel.Password);
+            if (success)
+            {
+                Navigation.NavigateTo("/", forceLoad: true);
+            }
+            else
+            {
+                errorMessage = "Credenciais inválidas";
+            }
+        }
+        catch
+        {
+            errorMessage = "Erro ao conectar com o servidor";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

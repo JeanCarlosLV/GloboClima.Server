@@ -1,0 +1,87 @@
+﻿@page "/register"
+@using GloboClima.Server.Models.Requests
+@using GloboClima.Server.Services
+
+@inject NavigationManager Navigation
+@inject AuthService AuthService
+
+<div class="auth-container">
+    <div class="auth-card">
+        <h3 class="text-center mb-4">Criar Conta</h3>
+
+        @if (errorMessage != null)
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <EditForm Model="@registerModel" OnValidSubmit="@HandleRegister">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label>Email</label>
+                <InputText @bind-Value="registerModel.Email" class="form-control" />
+                <ValidationMessage For="@(() => registerModel.Email)" />
+            </div>
+
+            <div class="mb-3">
+                <label>Senha</label>
+                <InputText type="password" @bind-Value="registerModel.Password" class="form-control" />
+                <ValidationMessage For="@(() => registerModel.Password)" />
+            </div>
+
+            <div class="mb-3">
+                <label>Confirmar Senha</label>
+                <InputText type="password" @bind-Value="registerModel.ConfirmPassword" class="form-control" />
+                <ValidationMessage For="@(() => registerModel.ConfirmPassword)" />
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm"></span>
+                    <span> Registrando...</span>
+                }
+                else
+                {
+                    <span>Registrar</span>
+                }
+            </button>
+        </EditForm>
+
+        <div class="text-center mt-3">
+            <a href="/login" class="text-muted">Já tem conta? Faça login</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterRequest registerModel = new();
+    private string? errorMessage;
+    private bool isLoading = false;
+
+    private async Task HandleRegister()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var success = await AuthService.RegisterAsync(
+                registerModel.Email,
+                registerModel.Password);
+
+            if (success)
+            {
+                Navigation.NavigateTo("/login");
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

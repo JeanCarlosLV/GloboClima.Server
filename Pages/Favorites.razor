@@ -1,0 +1,75 @@
+﻿@page "/favorites"
+@using GloboClima.Server.Models.Requests
+@using GloboClima.Server.Services
+@inject ApiService ApiService
+@inject NavigationManager Navigation
+
+<h3>Meus Favoritos</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (favorites == null)
+{
+    <p>Carregando...</p>
+}
+else if (!favorites.Any())
+{
+    <p>Nenhum favorito cadastrado</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Tipo</th>
+                <th>Nome</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var fav in favorites)
+            {
+                <tr>
+                    <td>@(fav.Type == "city" ? "Cidade" : "País")</td>
+                    <td>@fav.Name</td>
+                    <td>
+                        <button @onclick="() => DeleteFavorite(fav.FavoriteId)" class="btn btn-danger">Remover</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<FavoriteRequest> favorites;
+    private string errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            favorites = await ApiService.GetFavoritesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro ao carregar favoritos: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteFavorite(string favoriteId)
+    {
+        try
+        {
+            await ApiService.DeleteFavoriteAsync(favoriteId);
+            favorites = await ApiService.GetFavoritesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro ao remover favorito: {ex.Message}";
+        }
+    }
+}
